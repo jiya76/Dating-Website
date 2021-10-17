@@ -13,6 +13,7 @@
     "express": "^4.17.1",
     "express-handlebars": "^5.3.4",
     "handlebars": "^4.7.7",
+    "nodeman": "^1.1.2",
     "path": "^0.12.7"
   },
   "devDependencies": {
