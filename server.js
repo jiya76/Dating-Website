@@ -16,8 +16,9 @@ const app = express();
 //load keys file
 const Keys = require('./config/key');
 //use body parser middleware
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({extended: false
+}))
 // confirguration for authentication
 app.use(cookieParser());
 app.use(session({
