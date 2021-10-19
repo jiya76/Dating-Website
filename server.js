@@ -29,7 +29,6 @@ mongoose.connect(Keys.MongoDB,{
 const port = process.env.PORT || 3000;
 
 //setup view engine
-
 app.engine('handlebars', exphbs({
     defaultLayout: 'main',
    handlebars: allowInsecurePrototypeAccess(Handlebars)
