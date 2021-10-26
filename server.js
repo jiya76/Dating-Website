@@ -15,6 +15,8 @@ const path = require('path');
 const app = express();
 //load keys file
 const Keys = require('./config/key');
+//load helpers
+const{requireLogin,ensureGuest}=require('./helpers/auth')
 //use body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({extended: false
@@ -28,8 +30,14 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+//make user global object
+app.use((req,res, next) => {
+    res.locals.user = req.user || null;
+    next();
+});
 //load fb strategy
 require('./passport/facebook');
+require('./passport/google');
 //connect to mLab Mongoose
 mongoose.connect(Keys.MongoDB, {
     useNewUrlParser: true,
@@ -50,23 +58,69 @@ app.engine('handlebars', exphbs({
 app.set('view engine', 'handlebars');
 
 
-app.get('/', (req, res) => {
+app.get('/',ensureGuest, (req, res) => {
     res.render('home');
+    title:'Home'
+
 });
 
-app.get('/about', (req, res) => {
+app.get('/about',ensureGuest, (req, res) => {
     res.render('about');
+    title:'About'
 });
 
-app.get('/contact', (req, res) => {
+app.get('/contact',ensureGuest, (req, res) => {
     res.render('contact');
+    title:'Contact'
 });
 
-app.get('/auth/facebook', passport.authenticate('facebook'));
+app.get('/auth/facebook', passport.authenticate('facebook',{
+    scope: ['email']    
+}));
 app.get('/auth/facebook/callback', passport.authenticate('facebook',{
     successRedirect: '/profile',
     failureRedirect: '/'
 }));
+app.get('/auth/google', passport.authenticate('google',{
+    scope: ['profile']
+}));
+app.get('/auth/google/callback', passport.authenticate('google',{
+    successRedirect: '/profile',
+    failureRedirect: '/'
+}));
+app.get('/profile',requireLogin,(req,res) => {
+    User.findById({_id:req.user._id}).then((user) => {
+        if (user) {
+            user.online = true;
+            user.save((err,user) => {
+                if (err) {
+                    throw err;
+                }else{
+                    res.render('profile', {
+                        title: 'Profile',
+                        user: user
+                    });
+                }
+            })
+        }
+    });
+});
+
+app.get('/logout',(req,res) => {
+    User.findById({_id:req.user._id})
+    .then((user) => {
+        user.online = false;
+        user.save((err,user) => {
+            if (err) {
+                throw err;
+            }
+            if (user) {
+                req.logout();
+                res.redirect('/');
+            }
+        })
+    })
+});
 
 app.post('/contactUs', (req, res) => {
     console.log(req.body);
