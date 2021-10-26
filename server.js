@@ -8,6 +8,8 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const flash = require('connect-flash')
+const bcrypt = require('bcryptjs')
 //Load models
 const Message = require('./models/message');
 const User = require('./models/user');
@@ -30,14 +32,24 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(flash());
+app.use((req,res,next)=>{
+    res.locals.success_msg= req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    res.locals.error = req.flash('error');
+    next();
+});
+//setup express static folder to serve css,js files
+app.use(express.static('public'));
 //make user global object
 app.use((req,res, next) => {
     res.locals.user = req.user || null;
     next();
 });
-//load fb strategy
+//load passport
 require('./passport/facebook');
 require('./passport/google');
+require('./passport/local');
 //connect to mLab Mongoose
 mongoose.connect(Keys.MongoDB, {
     useNewUrlParser: true,
@@ -103,6 +115,78 @@ app.get('/profile',requireLogin,(req,res) => {
                 }
             })
         }
+    });
+});
+app.get('/newAccount',(req,res)=>{
+    res.render('newAccount',{
+        title: 'Signup'
+    });
+});
+app.post('/signup',(req,res)=>{
+    console.log(req.body);
+    let errors = [];
+
+    if (req.body.password !== req.body.password2) {
+        errors.push({text:'Password does Not match'});
+    }
+    if (req.body.password.length < 5) {
+        errors.push({text:'Password must be at least 5 characters'});
+    }
+    if (errors.length > 0) {
+        res.render('newAccount',{
+            errors: errors,
+            title: 'Error',
+            fullname: req.body.username,
+            email: req.body.email,
+            password: req.body.password,
+            password2: req.body.password2
+        });
+    }else{
+        User.findOne({email:req.body.email})
+        .then((user) => {
+            if (user) {
+                let errors = [];
+                errors.push({text:'Email already exist'});
+                res.render('newAccount',{
+                    title:'Signup',
+                    errors:errors
+                })
+            }else{
+                var salt = bcrypt.genSaltSync(10);
+                var hash = bcrypt.hashSync(req.body.password, salt);
+
+                const newUser = {
+                    fullname: req.body.username,
+                    email: req.body.email,
+                    password: hash
+                }
+              //  console.log(newUser);
+                new User(newUser).save((err,user) => {
+                    if (err) {
+                        throw err;
+                    }
+                    if (user) {
+                        let success = [];
+                        success.push({text:'You successfully created account. You can login now'});
+                        res.render('home',{
+                            success: success
+                        });
+                    }
+                });
+                
+            }
+        });
+    }
+});
+app.post('/login',passport.authenticate('local',{
+    successRedirect:'/profile',
+    failureRedirect: '/loginErrors'
+}));
+app.get('/loginErrors', (req,res) => {
+    let errors = [];
+    errors.push({text:'User Not found or Password Incorrect'});
+    res.render('home',{
+        errors:errors
     });
 });
 
