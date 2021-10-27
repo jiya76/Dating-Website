@@ -17,7 +17,7 @@ passport.use(new FacebookStrategy({
     clientID: keys.FacebookAppID,
     clientSecret: keys.FacebookAppSecret,
     profileFields: ['email','displayName','photos'],
-    callbackURL: 'http://localhost:3000/auth/facebook/callback',
+    callbackURL: 'https://serene-meadow-24485.herokuapp.com/',
     proxy:true
 
 },
