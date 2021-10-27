@@ -27,8 +27,8 @@ app.use(express.urlencoded({extended: false
 app.use(cookieParser());
 app.use(session({
     secret: 'mysecret',
-    saveUninitialized: true,
     resave: true,
+    saveUninitialized: true
 }));
 app.use(passport.initialize());
 app.use(passport.session());

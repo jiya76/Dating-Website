@@ -3,11 +3,11 @@ const FacebookStrategy = require('passport-facebook').Strategy;
 const User = require('../models/user');
 const keys = require('../config/key');
 
-passport.serializeUser((user, done) => {
+passport.serializeUser(function (user, done) {
     done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
+passport.deserializeUser(function(id, done) {
     User.findById(id, (err, user) => {
         done(err, user);
     });
@@ -16,24 +16,26 @@ passport.deserializeUser((id, done) => {
 passport.use(new FacebookStrategy({
     clientID: keys.FacebookAppID,
     clientSecret: keys.FacebookAppSecret,
+    profileFields: ['email','displayName','photos'],
     callbackURL: 'http://localhost:3000/auth/facebook/callback',
-    profileFields: ['email', 'name', 'displayName', 'photos']
+    proxy:true
 
-}, (accessToken, refreshToken, profile, done) => {
+},
+    function (accessToken, refreshToken, profile, done){
     console.log(profile);
-    User.findOne({facebook:profile.id},(err,user) => {
+    User.findOne({ facebook: profile.id }, (err, user) => {
         if (err) {
             return done(err);
         }
         if (user) {
-            return done(null,user);
-        }else{
+            return done(null, user);
+        } else {
             const newUser = {
                 facebook: profile.id,
                 fullname: profile.displayName,
                 lastname: profile.name.familyName,
                 firstname: profile.name.givenName,
-                image: `https://graph.facebook.com/${profile.id}/picture?type=large`,
+                image: `https://graph.facebook.com/${profile.id}?type=large`,
                 email: profile.emails[0].value
             }
             new User(newUser).save((err,user) => {
