@@ -190,7 +190,7 @@ app.get('/loginErrors', (req,res) => {
     });
 });
 
-app.get('/logout',(req,res) => {
+app.get('/',(req,res) => {
     User.findById({_id:req.user._id})
     .then((user) => {
         user.online = false;
