@@ -1,7 +1,7 @@
 const aws = require('aws-sdk')
 const multer = require('multer')
 const multer3 = require('multer-s3');
-const keys = require('../config/keys');[]
+const keys = require('../config/keys');
 
 aws.config.update({
     accessKeyId: keys.AWSAccessKeyID,
@@ -18,9 +18,12 @@ module.exports = {
                 cb(null,{fieldName: file.fieldname});
             },
             key: (req,file,cb) => {
-
+                cb(null,file.originalName);
+            },
+            rename: (fieldName,fileName) => {
+                return fileName.replace(/\w+/g,'-').toLowerCase();
             }        
         })
     })
-}
+};
 
